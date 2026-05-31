@@ -10,8 +10,18 @@ def send_discord_msg(content):
     if webhook_url:
         try:
             requests.post(webhook_url, json={
-                "username": "簽到", # Webhook 名字改為「簽到」
-                "content": content
+                "username": "簽到",
+                "embeds": [
+                    {
+                        "title": "巴哈姆特簽到通知",
+                        "description": content,
+                        "color": 0x00ff99,
+                        "footer": {
+                            "text": "Auto Check-in Bot"
+                        },
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                ]
             })
         except Exception as e:
             print(f"Discord 發送失敗: {e}")
@@ -25,6 +35,7 @@ resp = requests.post('https://api.gamer.com.tw/mobile_app/user/v3/do_login.php',
     'passwd': password,
     'vcode': '7045'
 })
+
 rune = resp.cookies.get('BAHARUNE')
 
 # 處理登入失敗
@@ -52,20 +63,22 @@ resp_json = requests.post('https://www.gamer.com.tw/ajax/signin.php', headers = 
 
 # 4. 判斷訊息格式
 discord_msg = ""
+
 if 'error' in resp_json:
     err_msg = resp_json['error']['message']
-    # 修正邏輯：將「今天您已經簽到過了喔」視為已簽到成功
     if "今天您已經簽到過了喔" in err_msg or "今日已簽到" in err_msg:
         discord_msg = "✅ **巴哈姆特 今日已簽到**"
     else:
         discord_msg = f"❌ **巴哈簽到失敗：{err_msg}**"
+
 elif 'data' in resp_json:
     days = resp_json['data'].get('days', 0)
     discord_msg = f"✅ **巴哈姆特 簽到成功 (連續 {days} 天)**"
+
 else:
     discord_msg = "❌ **巴哈簽到失敗：發生未知錯誤**"
 
-# 5. 發送 Discord 通知
+# 5. 發送 Discord 通知（Embed）
 send_discord_msg(discord_msg)
 
 # 6. 更新 README 紀錄

@@ -1,33 +1,37 @@
 name: Daily sign in Baha
 
 on:
-  workflow_dispatch
+  schedule:
+    - cron: "0 16 * * *"   # 台灣 00:00
+    - cron: "0 4 * * *"    # 台灣 12:00
+  workflow_dispatch:
 
 jobs:
   bahasign:
     runs-on: ubuntu-latest
+
     steps:
-      - name: clone repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: setup python environment
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: "3.11"
 
-      - name: install requests library
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install requests
 
-      - name: run the sign-in script
+      - name: Run sign-in script
         env:
           USER_ACCOUNT: ${{ secrets.ACCOUNT }}
           USER_PASSWORD: ${{ secrets.PASSWORD }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: python bahasign.py
 
-      - name: keep action alive (commit changes)
+      - name: Save log
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"

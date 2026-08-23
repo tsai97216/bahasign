@@ -42,8 +42,7 @@ rune = resp.cookies.get('BAHARUNE')
 if rune is None:
     msg = "❌ **巴哈簽到失敗：密碼錯誤或觸發兩步驟驗證**"
     send_discord_msg(msg)
-    with open('README', 'w', encoding='utf-8') as f:
-        f.write(f"{datetime.now().strftime('%Y/%m/%d %H:%M:%S')}\n{msg}")
+    print(msg)
     sys.exit("Login Failed")
 
 # 2. 獲取 CSRF Token
@@ -80,9 +79,10 @@ else:
 
 # 5. 發送 Discord 通知（Embed）
 send_discord_msg(discord_msg)
+print(discord_msg)
 
 # 6. 更新 README 紀錄
-with open('README', 'w', encoding='utf-8') as f:
+with open('README.md', 'w', encoding='utf-8') as f:
     f.write(f"{datetime.now().strftime('%Y/%m/%d %H:%M:%S')}\n")
     f.write(discord_msg + '\n\n')
     f.write(json.dumps(resp_json, ensure_ascii=False, indent=4))

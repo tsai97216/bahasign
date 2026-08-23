@@ -40,11 +40,11 @@ jobs:
       - name: Update README
         run: |
           TIME=$(TZ='Asia/Taipei' date '+%Y-%m-%d %H:%M:%S')
-          RESULT=$(grep -E '簽到成功|簽到失敗' result.txt | tail -n 1 || true)
+          RESULT=$(grep -E '^(✅|❌)' result.txt | tail -n 1 || true)
 
-          if echo "$RESULT" | grep -q '簽到成功'; then
+          if echo "$RESULT" | grep -q '^✅'; then
             STATUS="✅ 簽到成功"
-          elif echo "$RESULT" | grep -q '簽到失敗'; then
+          elif echo "$RESULT" | grep -q '^❌'; then
             STATUS="❌ 簽到失敗"
           else
             STATUS="⚠️ 執行完成，結果未知"

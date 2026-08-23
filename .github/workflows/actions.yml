@@ -6,6 +6,9 @@ on:
     - cron: "0 4 * * *"    # 台灣 12:00
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   bahasign:
     runs-on: ubuntu-latest
@@ -25,16 +28,46 @@ jobs:
           pip install requests
 
       - name: Run sign-in script
+        id: sign_in
+        continue-on-error: true
         env:
           USER_ACCOUNT: ${{ secrets.ACCOUNT }}
           USER_PASSWORD: ${{ secrets.PASSWORD }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        run: python bahasign.py
+        run: |
+          python bahasign.py | tee result.txt
+
+      - name: Update README
+        run: |
+          TIME=$(TZ='Asia/Taipei' date '+%Y/%m/%d %H:%M:%S')
+          RESULT=$(grep -E '簽到成功|簽到失敗' result.txt | tail -n 1 || true)
+
+          if echo "$RESULT" | grep -q '簽到成功'; then
+            STATUS="成功"
+          elif echo "$RESULT" | grep -q '簽到失敗'; then
+            STATUS="失敗"
+          else
+            STATUS="執行完成，結果未知"
+          fi
+
+          cat > README <<EOF
+          # 巴哈姆特自動簽到
+
+          | 帳號 | 上次簽到時間 | 簽到結果 |
+          | --- | --- | --- |
+          | 巴哈姆特帳號 | $TIME | $STATUS |
+
+          > 此頁面由 GitHub Actions 自動更新。
+          EOF
 
       - name: Save log
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add README
-          git commit -m "Auto Sign-in Log: $(date '+%Y/%m/%d %H:%M:%S')" || exit 0
+          git commit -m "Auto Sign-in Status: $(TZ='Asia/Taipei' date '+%Y/%m/%d %H:%M:%S')" || exit 0
           git push
+
+      - name: Fail workflow if sign-in failed
+        if: steps.sign_in.outcome == 'failure'
+        run: exit 1
